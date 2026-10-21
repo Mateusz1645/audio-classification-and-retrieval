@@ -4,7 +4,7 @@ An audio machine learning project for genre classification and content-based mus
 
 ## Status
 
-Repository scaffold only. Python modules and the dependency file are empty placeholders; notebooks are valid empty Jupyter notebooks. Training, evaluation, and the application are not implemented yet.
+Project setup is in place: pinned direct dependencies, Ruff checks, and a pytest package import test. Python modules and notebooks remain placeholders. Training, evaluation, and the application are not implemented yet.
 
 ## Planned application
 
@@ -36,8 +36,61 @@ src/audio_classification/    Reusable project code
 tests/                       Automated tests
 models/                      Local model artifacts (excluded from Git)
 reports/figures/              Evaluation figures
-requirements.txt             Dependencies (to be defined)
+requirements.txt             Audio processing and data exploration dependencies
+requirements-dev.txt         Development and notebook tools
+pyproject.toml               Ruff and pytest configuration
+.github/workflows/ci.yml     Pull request checks
 ```
+
+## Development setup
+
+Use **Python 3.11.9**. From the repository root, create a virtual environment using that Python installation.
+
+Windows PowerShell:
+
+```powershell
+py -3.11 --version
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+.venv\Scripts\python.exe -m pip check
+```
+
+Confirm that the version command reports `3.11.9` before creating the environment.
+
+Linux / macOS:
+
+```bash
+python3.11 --version
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+.venv/bin/python -m pip check
+```
+
+Again, verify that the selected interpreter is Python 3.11.9. Direct dependencies are pinned; transitive dependencies are not locked yet.
+
+To open the notebooks on Windows:
+
+```powershell
+.venv\Scripts\python.exe -m jupyterlab
+```
+
+On Linux / macOS, use `.venv/bin/python -m jupyterlab`.
+
+## Quality checks
+
+Run the same checks used by CI from the repository root. On Windows:
+
+```powershell
+.venv\Scripts\python.exe -m ruff check .
+.venv\Scripts\python.exe -m ruff format --check .
+.venv\Scripts\python.exe -m pytest
+```
+
+On Linux / macOS, replace `.venv\Scripts\python.exe` with `.venv/bin/python`.
+
+GitHub Actions runs these checks on pull requests, pushes to `main` and `develop`, and manual workflow runs. Ruff checks code, import ordering, and formatting without modifying files. The current test only verifies that the project package can be imported; functional tests will accompany implementation.
+
+To block merging when checks fail, configure branch protection on GitHub to require the `Ruff` and `Tests` checks. The workflow alone does not enforce merge restrictions.
 
 ## Data and reproducibility
 
@@ -59,7 +112,7 @@ Track experiments with MLflow or Weights & Biases; the choice is pending. Docume
 
 ## Initial milestone
 
-Document data acquisition and licensing, define the shared environment, explore the dataset, and persist the evaluation splits before implementing the baseline.
+Verify the shared environment on each team member's machine, document data acquisition and licensing, explore the dataset, and persist the evaluation splits before implementing the baseline.
 
 ## License
 
