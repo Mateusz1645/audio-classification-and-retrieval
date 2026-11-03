@@ -1,119 +1,163 @@
-# Audio Genre Classification & Sounds-Like Similarity Search
+# Audio Genre Classification & "Sounds-Like" Similarity Search
 
-An audio machine learning project for genre classification and content-based music retrieval using FMA-Small.
+An end-to-end audio machine learning project for music genre classification and content-based audio retrieval using the **FMA-Small** dataset.
+
+---
 
 ## Status
 
-Project setup is in place: pinned direct dependencies, Ruff checks, and a pytest package import test. Python modules and notebooks remain placeholders. Training, evaluation, and the application are not implemented yet.
+Project infrastructure is set up with pinned dependencies, Ruff linting/formatting checks, and automated pytest workflows. Data acquisition and preprocessing pipelines are implemented, and modeling experiments are in active development.
 
-## Planned application
+---
 
-- Upload an audio recording.
-- Predict its music genre.
-- Display its spectrogram.
-- Retrieve similar tracks using audio embeddings and FAISS.
-- Play the query and retrieved audio in a Streamlit interface.
+## Deliverables & Course Coverage
 
-## Planned approaches
+This project satisfies the requirements for the **Analysis of Unstructured Data** course:
 
-1. Classical baseline: MFCC features with a classical classifier.
-2. A small CNN trained on log-Mel spectrograms.
-3. A pretrained ResNet-18 fine-tuned on log-Mel spectrograms.
+- **Unstructured Data Pipeline:** Raw audio files resampled and converted into 2D Log-Mel Spectrograms ($22.05\text{ kHz}$ mono, 3-second chunks, 128 Mel bins).
+- **Three Modeling Approaches:**
+  1. **Classical ML Baseline:** Tabular audio features (20 MFCCs, Spectral Centroid, Zero-Crossing Rate) evaluated with a Random Forest classifier.
+  2. **Custom Audio CNN:** A 4-block 2D Convolutional Neural Network trained on Log-Mel Spectrograms.
+  3. **Fine-Tuned ResNet-18:** Pretrained ResNet-18 backbone adapted for 1-channel spectrograms to learn deep acoustic representations.
+- **Content-Based Similarity Search:** 512-dimensional latent embedding extraction indexed with **FAISS** (Inner Product / Cosine Distance) for real-time nearest-neighbor retrieval.
+- **Experiment Tracking:** Logging all hyperparameters, metrics (Macro-F1, per-class accuracy, loss curves), and model checkpoints using **MLflow**.
+- **Interpretability & Error Analysis:** Visual explanations using **Grad-CAM heatmaps** on spectrograms, $t$-SNE/UMAP projections of FAISS embeddings, and confusion matrix analysis.
+- **Interactive Application:** A Streamlit web interface allowing users to upload audio clips, visualize spectrograms, predict genres, and play recommended "sounds-like" tracks.
 
-Compare classification results using macro-F1, per-class metrics, and confusion matrices. Evaluate retrieval separately and measure inference time. Include embedding visualizations, prediction explanations, and error analysis.
+---
 
-## Repository structure
+## Repository Structure
 
 ```text
-app/                         Streamlit application
-configs/                     Experiment configuration
-data/                        Local datasets (excluded from Git)
-data/raw/                    Original audio and metadata
-data/interim/                Intermediate audio processing outputs
-data/processed/              Features, spectrograms, and embeddings
-notebooks/                   Exploration, experiments, and final report
-src/audio_classification/    Reusable project code
-tests/                       Automated tests
-models/                      Local model artifacts (excluded from Git)
-reports/figures/              Evaluation figures
-requirements.txt             Audio processing and data exploration dependencies
-requirements-dev.txt         Development and notebook tools
-pyproject.toml               Ruff and pytest configuration
-.github/workflows/ci.yml     Pull request checks
+audio-classification-and-retrieval/
+├── app/                         # Streamlit web application
+├── configs/                     # Experiment configurations (YAML/JSON)
+├── data/                        # Local datasets (excluded from Git)
+│   ├── raw/                     # Downloaded fma_small/ and fma_metadata/
+│   ├── interim/                 # Track splits and metadata DataFrames
+│   └── processed/               # Extracted features and spectrogram tensors
+├── notebooks/                   # Sequential project notebooks
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_features_and_baseline.ipynb
+│   ├── 03_deep_models.ipynb
+│   ├── 04_evaluation_and_interpretability.ipynb
+│   └── 05_final_report.ipynb
+├── src/                         # Reusable project package
+│   └── audio_classification/
+│       ├── __init__.py
+│       ├── data.py              # Metadata parsing, splits, PyTorch Dataset
+│       ├── download_data.py     # Reproducible dataset downloader
+│       ├── features.py          # Classical features & Log-Mel Spectrograms
+│       ├── models.py            # CNN architectures & feature extractors
+│       └── utils.py             # Seed setting and helper utilities
+├── tests/                       # Automated unit and integration tests
+├── models/                      # Local model checkpoints (excluded from Git)
+├── reports/                     # Figures and final presentation slides
+│   └── figures/
+├── pyproject.toml               # Package metadata, Ruff, and Pytest configs
+├── requirements.txt             # Primary dependencies
+├── requirements-dev.txt         # Development tools
+├── README.md
+└── .gitignore
+
 ```
 
-## Development setup
+---
 
-Use **Python 3.11.9**. From the repository root, create a virtual environment using that Python installation.
+## Development Setup
 
-Windows PowerShell:
+This project requires **Python 3.11.9**.
 
-```powershell
-py -3.11 --version
-py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
-.venv\Scripts\python.exe -m pip check
-```
+### 1. Create Virtual Environment & Install Dependencies
 
-Confirm that the version command reports `3.11.9` before creating the environment.
-
-Linux / macOS:
+Using `uv` (Recommended for fast resolution):
 
 ```bash
+# Verify Python version
 python3.11 --version
+
+# Create and activate environment
+uv venv --python 3.11 .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\Activate.ps1
+
+# Install requirements
+uv pip install -r requirements.txt -r requirements-dev.txt
+uv pip install -e .
+
+```
+
+Using standard `pip`:
+
+```bash
 python3.11 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
-.venv/bin/python -m pip check
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate.bat
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pip install -e .
+
 ```
 
-Again, verify that the selected interpreter is Python 3.11.9. Direct dependencies are pinned; transitive dependencies are not locked yet.
+### 2. Register Jupyter Kernel
 
-To open the notebooks on Windows:
+To select your `.venv` environment inside JupyterLab or VS Code:
 
-```powershell
-.venv\Scripts\python.exe -m jupyterlab
+```bash
+python -m ipykernel install --user --name=audio-retrieval-venv --display-name "Python (.venv)"
+python -m jupyterlab
+
 ```
 
-On Linux / macOS, use `.venv/bin/python -m jupyterlab`.
+---
 
-## Quality checks
+## Data Acquisition & Reproducibility
 
-Run the same checks used by CI from the repository root. On Windows:
+The project uses **FMA-Small** (8,000 tracks, 8 genres, 30s clips, ~7.2 GB).
 
-```powershell
-.venv\Scripts\python.exe -m ruff check .
-.venv\Scripts\python.exe -m ruff format --check .
-.venv\Scripts\python.exe -m pytest
+### Downloading the Dataset
+
+Run the data acquisition script from the project root:
+
+```bash
+python src/audio_classification/download_data.py
+
 ```
 
-On Linux / macOS, replace `.venv\Scripts\python.exe` with `.venv/bin/python`.
+This fetches `fma_small.zip` and `fma_metadata.zip` from Switch Cloud servers and extracts them into `data/raw/`.
 
-GitHub Actions runs these checks on pull requests, pushes to `main` and `develop`, and manual workflow runs. Ruff checks code, import ordering, and formatting without modifying files. The current test only verifies that the project package can be imported; functional tests will accompany implementation.
+### Split & Leakage Protection Protocol
 
-To block merging when checks fail, configure branch protection on GitHub to require the `Ruff` and `Tests` checks. The workflow alone does not enforce merge restrictions.
+To prevent **artist leakage**, models are evaluated using FMA's official **artist-filtered train/validation/test splits**. Tracks from the same artist/album are strictly kept within the same split partition.
 
-## Data and reproducibility
+### Experiment Tracking
 
-FMA-Small is the planned dataset. Download instructions, source and license details will be added when data acquisition is implemented. Audio recordings, generated features, and model checkpoints must not be committed to Git.
+Launch MLflow locally to view tracked runs, hyperparameters, and metric curves:
 
-Verify the official split and artist separation before training. Keep all segments of a track in the same partition. Record fixed train/validation/test splits, random seeds, environment versions, and preprocessing settings. Fit preprocessing on training data only.
+```bash
+mlflow ui
 
-Track experiments with MLflow or Weights & Biases; the choice is pending. Document how to download or reproduce model artifacts before publishing a runnable demo.
+```
 
-## Course deliverables
+Navigate to `http://127.0.0.1:5000` in your browser.
 
-- Raw audio exploration and preprocessing.
-- Three modeling approaches; confirm course-block coverage with the instructor.
-- Model comparison, interpretability, and error analysis.
-- Reproducible experiments and experiment tracking.
-- A final notebook that runs from top to bottom.
-- Team contribution history and reviewed pull requests.
-- Presentation slides and a rehearsed demo, with materials submitted 48 hours before the presentation.
+---
 
-## Initial milestone
+## Quality Checks
 
-Verify the shared environment on each team member's machine, document data acquisition and licensing, explore the dataset, and persist the evaluation splits before implementing the baseline.
+Run local linting, formatting, and unit tests prior to committing code:
+
+```bash
+# Code checks and linting
+ruff check .
+ruff format --check .
+
+# Automated testing
+pytest
+
+```
+
+---
 
 ## License
 
-Project code is distributed under the MIT license in `LICENSE`. Dataset and audio licenses are separate.
+Project code is distributed under the **MIT License** in `LICENSE`. Dataset files and audio clips are subject to their respective Creative Commons licenses as specified in the FMA repository.
