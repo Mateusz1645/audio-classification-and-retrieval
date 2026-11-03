@@ -1,5 +1,6 @@
 # src/audio_classification/features.py
 import warnings
+
 import librosa
 import numpy as np
 import torch
@@ -10,9 +11,7 @@ import torchaudio.transforms as T
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def extract_classical_features(
-    file_path: str, sample_rate: int = 22050
-) -> np.ndarray:
+def extract_classical_features(file_path: str, sample_rate: int = 22050) -> np.ndarray:
     """Extracts classical tabular audio descriptors for ML baselines.
 
     Computes mean & std of 20 MFCCs, Spectral Centroid, and Zero-Crossing Rate.
@@ -47,9 +46,7 @@ def extract_classical_features(
         zcr = librosa.feature.zero_crossing_rate(y)
         zcr_mean, zcr_std = np.mean(zcr), np.std(zcr)
 
-        return np.hstack(
-            [mfcc_mean, mfcc_std, cent_mean, cent_std, zcr_mean, zcr_std]
-        )
+        return np.hstack([mfcc_mean, mfcc_std, cent_mean, cent_std, zcr_mean, zcr_std])
     except Exception:
         # Fallback zero array if audio clip is corrupt or missing
         return np.zeros(44, dtype=np.float32)

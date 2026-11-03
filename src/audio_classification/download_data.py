@@ -1,5 +1,4 @@
 # src/audio_classification/download_data.py
-import os
 import sys
 import urllib.request
 import zipfile
@@ -16,7 +15,7 @@ def download_progress_hook(block_num, block_size, total_size):
     if total_size > 0:
         percent = downloaded * 100 / total_size
         sys.stdout.write(
-            f"\rDownloading... {percent:.1f}% ({downloaded / (1024*1024):.1f} MB / {total_size / (1024*1024):.1f} MB)"
+            f"\rDownloading... {percent:.1f}% ({downloaded / (1024 * 1024):.1f} MB / {total_size / (1024 * 1024):.1f} MB)"
         )
         sys.stdout.flush()
 
@@ -30,9 +29,7 @@ def download_and_extract(url: str, dest_dir: Path) -> None:
     # Download if not present
     if not zip_path.exists():
         print(f"\nFetching {file_name} from official FMA server...")
-        urllib.request.urlretrieve(
-            url, zip_path, reporthook=download_progress_hook
-        )
+        urllib.request.urlretrieve(url, zip_path, reporthook=download_progress_hook)
         print(f"\nDownload complete: {zip_path}")
     else:
         print(f"\n{file_name} already exists in {dest_dir}. Skipping download.")

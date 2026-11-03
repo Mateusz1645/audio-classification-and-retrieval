@@ -1,8 +1,10 @@
 # src/audio_classification/data.py
 import os
+
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
+
 from src.audio_classification.features import MelSpectrogramExtractor
 
 
@@ -69,6 +71,4 @@ class FMASpectrogramDataset(Dataset):
             return spectrograms, torch.tensor(label, dtype=torch.long)
         except Exception:
             # Fallback zero tensor for corrupted audio files
-            return torch.zeros((10, 1, 128, 130)), torch.tensor(
-                label, dtype=torch.long
-            )
+            return torch.zeros((10, 1, 128, 130)), torch.tensor(label, dtype=torch.long)
