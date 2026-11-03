@@ -9,3 +9,6 @@ select = ["E4", "E7", "E9", "F", "I"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q"
+
+[tool.ruff.per-file-ignores]
+"*.ipynb" = ["E402"]
