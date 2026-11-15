@@ -69,6 +69,5 @@ class FMASpectrogramDataset(Dataset):
             if spectrograms is None:
                 raise ValueError("Audio clip too short or empty")
             return spectrograms, torch.tensor(label, dtype=torch.long)
-        except Exception:
-            # Fallback zero tensor for corrupted audio files
-            return torch.zeros((10, 1, 128, 130)), torch.tensor(label, dtype=torch.long)
+        except Exception as exc:
+            raise RuntimeError(f"Cannot load audio: {audio_path}") from exc

@@ -1,6 +1,7 @@
 # src/audio_classification/features.py
 import warnings
 
+import soundfile as sf
 import librosa
 import numpy as np
 import torch
@@ -20,7 +21,8 @@ def extract_classical_features(file_path: str, sample_rate: int = 22050) -> np.n
     """
     try:
         # Load audio via torchaudio to prevent low-level decoder crashes
-        waveform, sr = torchaudio.load(file_path)
+        waveform, sr = sf.read(file_path, dtype="float32", always_2d=True)
+        waveform = torch.from_numpy(waveform.T)
 
         # Convert stereo/multi-channel to mono
         if waveform.shape[0] > 1:
@@ -47,9 +49,8 @@ def extract_classical_features(file_path: str, sample_rate: int = 22050) -> np.n
         zcr_mean, zcr_std = np.mean(zcr), np.std(zcr)
 
         return np.hstack([mfcc_mean, mfcc_std, cent_mean, cent_std, zcr_mean, zcr_std])
-    except Exception:
-        # Fallback zero array if audio clip is corrupt or missing
-        return np.zeros(44, dtype=np.float32)
+    except Exception as exc:
+        raise RuntimeError(f"Cannot extract audio features: {file_path}") from exc
 
 
 class MelSpectrogramExtractor:
@@ -80,7 +81,8 @@ class MelSpectrogramExtractor:
 
         and computes Log-Mel Spectrograms tensor of shape [num_chunks, 1, n_mels, time_frames].
         """
-        waveform, sr = torchaudio.load(file_path)
+        waveform, sr = sf.read(file_path, dtype="float32", always_2d=True)
+        waveform = torch.from_numpy(waveform.T)
 
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)

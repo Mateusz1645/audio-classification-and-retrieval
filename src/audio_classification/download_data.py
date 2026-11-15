@@ -49,7 +49,7 @@ def main():
     print(f"Target raw data directory: {raw_data_dir}")
 
     # 1. Download & Extract Metadata
-    # download_and_extract(METADATA_URL, raw_data_dir)
+    download_and_extract(METADATA_URL, raw_data_dir)
 
     # 2. Download & Extract FMA-Small Audio
     download_and_extract(AUDIO_URL, raw_data_dir)
