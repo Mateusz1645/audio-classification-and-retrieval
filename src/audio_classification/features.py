@@ -1,11 +1,10 @@
 # src/audio_classification/features.py
 import warnings
 
-import soundfile as sf
 import librosa
 import numpy as np
+import soundfile as sf
 import torch
-import torchaudio
 import torchaudio.transforms as T
 
 # Suppress minor audio decoding warnings
@@ -54,7 +53,7 @@ def extract_classical_features(file_path: str, sample_rate: int = 22050) -> np.n
 
 
 class MelSpectrogramExtractor:
-    """Converts 1D audio waveforms into 2D Log-Mel Spectrograms for CNN backbones."""
+    """Create batched log-Mel segments on a selected CPU or CUDA device."""
 
     def __init__(
         self,
@@ -63,9 +62,11 @@ class MelSpectrogramExtractor:
         hop_length: int = 512,
         n_mels: int = 128,
         segment_duration: float = 3.0,
+        device: str | torch.device = "cpu",
     ):
         self.sample_rate = sample_rate
         self.segment_samples = int(sample_rate * segment_duration)
+        self.device = torch.device(device)
 
         # Torchaudio MelSpectrogram & dB scale transforms
         self.mel_transform = T.MelSpectrogram(
@@ -74,12 +75,14 @@ class MelSpectrogramExtractor:
             hop_length=hop_length,
             n_mels=n_mels,
         )
-        self.db_transform = T.AmplitudeToDB(top_db=80.0)
+        self.mel_transform = self.mel_transform.to(self.device)
+        self.db_transform = T.AmplitudeToDB(top_db=80.0).to(self.device)
 
     def process_file(self, file_path: str) -> torch.Tensor:
         """Loads MP3, converts to mono 22.05kHz, slices into 3s non-overlapping chunks,
 
         and computes Log-Mel Spectrograms tensor of shape [num_chunks, 1, n_mels, time_frames].
+        All complete segments are transformed together on self.device.
         """
         waveform, sr = sf.read(file_path, dtype="float32", always_2d=True)
         waveform = torch.from_numpy(waveform.T)
@@ -87,24 +90,15 @@ class MelSpectrogramExtractor:
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
 
+        waveform = waveform.to(self.device)
         if sr != self.sample_rate:
-            resampler = T.Resample(sr, self.sample_rate)
+            resampler = T.Resample(sr, self.sample_rate).to(self.device)
             waveform = resampler(waveform)
 
-        total_samples = waveform.shape[-1]
-        chunks = []
-
-        # Slice 30-second audio into 3-second non-overlapping segments
-        for start in range(
-            0, total_samples - self.segment_samples + 1, self.segment_samples
-        ):
-            chunk = waveform[:, start : start + self.segment_samples]
-            mel_spec = self.mel_transform(chunk)
-            log_mel_spec = self.db_transform(mel_spec)
-            chunks.append(log_mel_spec)
-
-        if not chunks:
+        if waveform.shape[-1] < self.segment_samples:
             return None
 
-        # Output shape: [num_chunks, 1, 128, 130]
-        return torch.stack(chunks)
+        # Transform all complete segments together instead of launching one FFT per loop.
+        chunks = waveform.unfold(-1, self.segment_samples, self.segment_samples)
+        chunks = chunks.transpose(0, 1)
+        return self.db_transform(self.mel_transform(chunks))
