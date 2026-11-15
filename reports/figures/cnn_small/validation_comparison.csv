@@ -1,0 +1,2 @@
+model,accuracy,macro_f1
+AudioCNN,0.225,0.1466269841269841
